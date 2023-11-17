@@ -4,48 +4,10 @@ import matplotlib.pyplot as plt
 import math
 import random
 
-# collumns: 4, 8, 9, 11, 14, 15, 16, 18, 19 probably least useful for prediction
+# columns: 4, 8, 9, 11, 14, 15, 16, 18, 19 probably least useful for prediction
 
 
-class Perceptron():
-    def __init__(self, inputs, weights, bias) -> None:
-        self.inputs = inputs
-        self.weights = weights
-        self.bias = bias
-        self.weighted_sum = 0
-    
-    def calculate_weighted_sum(self):
-        sum = 0
-        for i in range(len(self.inputs)):
-            sum += (self.inputs[i] * self.weights[i])
-        self.weighted_sum = sum + self.bias
-    
-    def activate(self):
-        self.calculate_weighted_sum()
-        output = math.tanh(self.weighted_sum)
-        return output
-
-
-class Layer():
-    def __init__(self, inputs, weights, bias) -> None:
-        self.inputs = inputs
-        self.weights = weights
-        self.bias = bias
-        self.output = []
-    
-    def calculate_output(self):
-        for i in range(len(self.weights)):
-            perceptron = Perceptron(self.inputs, self.weights[i], self.bias)
-            self.output.append(perceptron.activate())
-        return self.output
-    
-    def soft_max(self):
-        exponent = np.exp(self.output - np.max(self.output))
-        self.output = exponent / exponent.sum()
-        return self.output
-
-
-class Data():
+class Data:
     def __init__(self, data_file) -> None:
         col_names = ['id', 'diagnosis']
         for i in range(0, 30):
@@ -54,7 +16,6 @@ class Data():
 
         self.standardize()
 
-    
     def standardize(self):
         for column_id in self.data.columns[2:]:
             column = self.data.get(column_id)
@@ -77,7 +38,7 @@ class Data():
             columnM = dataM.describe().get(column)
             columnB = dataB.describe().get(column)
             subplot = ax[j, i]
-            
+
             x = [1, 2] # M = 1, B = 2
             y = [columnM['mean'], columnB['mean']]
             e = [columnM['std'], columnB['std']]
@@ -92,8 +53,136 @@ class Data():
 
             i += 1
 
-        plt.xlabel('Diagnosis')   
+        plt.xlabel('Diagnosis')
         plt.show()
+
+
+class Perceptron:
+    def __init__(self, inputs, weights, bias) -> None:
+        self.inputs = list(inputs)
+        self.weights = list(weights)
+        self.bias = bias
+        self.weighted_sum = 0
+
+    def calculate_weighted_sum(self):
+        temp_sum = 0
+        for i in range(len(self.inputs)):
+            temp_sum += (self.inputs[i] * self.weights[i])
+        self.weighted_sum = temp_sum + self.bias
+
+    def activate(self):
+        self.calculate_weighted_sum()
+        output = math.tanh(self.weighted_sum)
+        return output
+
+
+class Layer:
+    def __init__(self, inputs, weights, bias) -> None:
+        self.inputs = inputs
+        self.weights = weights
+        self.bias = bias
+        self.output = []
+
+    def calculate_output(self):
+        for i in range(len(self.weights)):
+            perceptron = Perceptron(self.inputs, self.weights[i], self.bias)
+            self.output.append(perceptron.activate())
+        return self.output
+
+    def soft_max(self):
+        exponent = np.exp(self.output - np.max(self.output))
+        self.output = exponent / exponent.sum()
+        return self.output
+
+
+class Network:
+    def __init__(self, data, hidden_layers, weights):
+        self.data = data
+        self.hidden_layers = hidden_layers
+        self.weights = weights
+
+    def run_network(self):
+        layer = Layer(self.data, self.weights[0], 0.3)
+        output = layer.calculate_output()
+
+        for i in range(self.hidden_layers):
+            weights = self.weights[i]
+            layer = Layer(output, weights, 0.2)
+            output = layer.calculate_output()
+
+        weights = get_random_weights(30, 2)
+
+        layer = Layer(output, weights, 0.3)
+        layer.calculate_output()
+        output = layer.soft_max()
+        return output
+
+
+class Trainer:
+    @staticmethod
+    def calculate_cost(network_output, expected_result):
+        if expected_result == 'M':
+            expected_result = [1, 0]
+        else:
+            expected_result = [0, 1]
+        error = pow(network_output - expected_result, 2)
+        cost = error[0] + error[1]
+        return cost
+
+    def __init__(self, dataset, hidden_layers, nodes_per_layer, learning_rate):
+        self.expected_results = dataset.diagnosis
+        self.input_data = dataset.drop(columns='diagnosis')
+        self.hidden_layers = hidden_layers
+        self.learning_rate = learning_rate
+
+        # weights = list_of_all_weights[list_of_layer_weights[list_of_node_weights]]
+        self.weights = []
+        for i in range(self.hidden_layers + 1):
+            input_nodes = nodes_per_layer
+            output_nodes = nodes_per_layer
+            if i == 0:
+                input_nodes = len(self.input_data.columns)
+            elif i == self.hidden_layers:
+                output_nodes = 2
+            temp_layer = []
+
+            for j in range(output_nodes):
+                temp_node = []
+                for k in range(input_nodes):
+                    temp_node.append(float(random.randrange(-100, 100)) / 100)
+                temp_layer.append(temp_node)
+            self.weights.append(temp_layer)
+
+    def train(self, max_iterations):
+        for i in range(max_iterations):
+            total_cost = self.train_one_epoch()
+            print(total_cost)
+            self.gradient_descent(total_cost)
+
+    def train_one_epoch(self):
+        total_cost = 0
+        for i in range(len(self.input_data)):
+            output, cost = self.run_network(self.input_data.iloc[i], self.expected_results[i])
+            total_cost += cost
+            # print("M: ", round(output[0] * 100, 2), "%")
+            # print("B: ", round(output[1] * 100, 2), "%")
+        total_cost = total_cost / i
+        return total_cost
+
+    def gradient_descent(self, total_cost):
+        for i in range(len(self.weights)):
+            for j in range(len(self.weights[i])):
+                for k in range(len(self.weights[i][j])):
+                    # weight_derivative = -(2 / len(self.input_data.columns)) * sum(x * (y - y_predicted))
+                    weight_derivative = -(2 / len(self.input_data.columns)) * total_cost
+                    self.weights[i][j][k] = self.weights[i][j][k] - (self.learning_rate * weight_derivative)
+
+    def run_network(self, data, expected_result):
+        network = Network(data, self.hidden_layers, self.weights)
+
+        network_output = network.run_network()
+        cost = self.calculate_cost(network_output, expected_result)
+        return network_output, cost
 
 
 def get_random_weights(input_nodes, output_nodes):
@@ -105,36 +194,12 @@ def get_random_weights(input_nodes, output_nodes):
         weights.append(temp)
     return weights
 
+
 if __name__ == "__main__":
-    data_class = Data("data.csv")
-    data = data_class.data
+    input_data = Data("data.csv").data
 
-    hidden_layers = 20
+    input_data = input_data.drop(columns=['id'])
 
-    data = data.drop(columns=['diagnosis', 'id'])
+    trainer = Trainer(input_data, 3, 7, 0.01)
 
-    weights = []
-
-    for i in range(len(data.columns)):
-        temp = []
-        for j in range(len(data.columns)):
-            temp.append(0)
-        weights.append(temp)
-
-    layer = Layer(data.iloc[0].to_list(), weights, 0.3)
-    output = layer.calculate_output()
-
-    for i in range(hidden_layers):
-        output_nodes = len(output)
-        weights = get_random_weights(output_nodes, int(output_nodes * 0.97))
-        layer = Layer(output, weights, 0.2)
-        output = layer.calculate_output()
-
-    weights = get_random_weights(30, 2)
-
-    layer = Layer(output, weights, 0.3)
-    layer.calculate_output()
-    output = layer.soft_max()
-
-    print("M: ", round(output[0] * 100, 2), "%")
-    print("D: ", round(output[1] * 100, 2), "%")
+    trainer.train(50)
