@@ -121,19 +121,23 @@ class Network:
 class Trainer:
     @staticmethod
     def calculate_cost(network_output, expected_result):
-        if expected_result == 'M':
-            expected_result = [1, 0]
-        else:
-            expected_result = [0, 1]
-        error = pow(network_output - expected_result, 2)
+        error = pow(expected_result - network_output, 2)
         cost = error[0] + error[1]
         return cost
 
     def __init__(self, dataset, hidden_layers, nodes_per_layer, learning_rate):
-        self.expected_results = dataset.diagnosis
+        expected_results = []
+        for expected_result in dataset.diagnosis:
+            if expected_result == 'M':
+                expected_results.append([1, 0])
+            else:
+                expected_results.append([0, 1])
+        self.expected_results = expected_results
         self.input_data = dataset.drop(columns='diagnosis')
         self.hidden_layers = hidden_layers
         self.learning_rate = learning_rate
+        self.output = []
+        self.deriv = (lambda x: 1 - x ** 2)
 
         # weights = list_of_all_weights[list_of_layer_weights[list_of_node_weights]]
         self.weights = []
@@ -155,15 +159,20 @@ class Trainer:
 
     def train(self, max_iterations):
         for i in range(max_iterations):
+            self.output = []
             total_cost = self.train_one_epoch()
-            print(total_cost)
-            self.gradient_descent(total_cost)
+            # print(total_cost)
+            # self.gradient_descent(total_cost)
+            self.backpropagation()
 
     def train_one_epoch(self):
         total_cost = 0
+        square_error = 0
         for i in range(len(self.input_data)):
             output, cost = self.run_network(self.input_data.iloc[i], self.expected_results[i])
-            total_cost += cost
+            square_error = (square_error + (0.05 * cost))
+            total_cost = total_cost + square_error
+            self.output.append(output)
             # print("M: ", round(output[0] * 100, 2), "%")
             # print("B: ", round(output[1] * 100, 2), "%")
         total_cost = total_cost / i
@@ -176,6 +185,28 @@ class Trainer:
                     # weight_derivative = -(2 / len(self.input_data.columns)) * sum(x * (y - y_predicted))
                     weight_derivative = -(2 / len(self.input_data.columns)) * total_cost
                     self.weights[i][j][k] = self.weights[i][j][k] - (self.learning_rate * weight_derivative)
+    
+    def backpropagation(self):
+        delta_output = []
+        error_output = np.array(self.output) - np.array(self.expected_results)
+        delta_output = ((-1 * error_output) * self.deriv(np.array(self.expected_results)))
+        # print(delta_output)
+        # for i in range(len(delta_output)):
+        #     delta_output[i] = list(delta_output[i])
+        #     if delta_output[i][0] == 0.0:
+        #         delta_output[i] = delta_output[i][1]
+        #     else:
+        #         delta_output[i] = delta_output[i][0]
+        #     print(delta_output[i])
+        # print(delta_output)
+        for i in range(len(self.weights)):
+            for j in range(len(self.weights[i])):
+                for k in range(len(self.weights[i][j])):
+                    output_multiplication = (delta_output[k] * self.output[i])
+                    if output_multiplication[0] == 0:
+                        self.weights[i][j][k] -= (self.learning_rate * output_multiplication[1])
+                    else:
+                        self.weights[i][j][k] -= (self.learning_rate * output_multiplication[0])
 
     def run_network(self, data, expected_result):
         network = Network(data, self.hidden_layers, self.weights)
@@ -200,6 +231,6 @@ if __name__ == "__main__":
 
     input_data = input_data.drop(columns=['id'])
 
-    trainer = Trainer(input_data, 3, 7, 0.01)
+    trainer = Trainer(input_data, 3, 7, 0.1)
 
-    trainer.train(50)
+    trainer.train(500)
