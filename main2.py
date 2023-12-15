@@ -144,7 +144,6 @@ class MultilayerPerceptron():
         # for i, layer in enumerate(self.hidden_layers):
         #     if i == self.hidden_layers_amount:
         #         break
-            
 
 
         # # Calculate error between input and hidden layer
