@@ -3,6 +3,7 @@ from random import seed, shuffle, random
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 
 
 class Data:
@@ -161,6 +162,19 @@ class Network:
                     neuron['weights'][j] -= l_rate * neuron['weight_delta'] * inputs[j]
                 neuron['weights'][-1] -= l_rate * neuron['weight_delta']
 
+    # Export network to a text file
+    def export_network(self, filename):
+        try:
+            file = open(filename + '.txt', 'x')
+        except:
+            file = open(filename + '.txt', 'w')
+        json.dump(self.network, file)
+
+    # Import network from a text file
+    def import_network(self, filename):
+        file = open(filename, 'r')
+        self.network = json.load(file)
+
 
 def get_expected_results(data):
     expected_results = []
@@ -217,6 +231,12 @@ train_data = train_data.values.tolist()
 
 network = Network(len(train_data[0]), [2, 2], 'tanh')
 train_network(network, train_data, expected_results_train, 0.05, 20)
+
+network.export_network('network')
+
+new_network = Network(3)
+new_network.import_network('network.txt')
+print(new_network.network)
 
 test_data = test_data.drop(columns=['id'])
 expected_results_test = test_data.diagnosis
