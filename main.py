@@ -17,9 +17,8 @@ if __name__ == '__main__':
                         help='Name of the file where the training data will be saved')
     parser.add_argument('--predict_file', type=str, default='predict_data',
                         help='Name of the file where the prediction data will be saved')
-    parser.add_argument('--hidden_layers', type=list, default=[2, 2],
-                        help='List of amount of nodes in the hidden layer(s). Length of list is amount of \
-                            hidden layers, each value is amount of nodes in the hidden layer')
+    parser.add_argument('--hidden_layers', type=int, default=[2, 2], nargs='+',
+                        help='Amount of nodes in the hidden layer(s)')
     parser.add_argument('--activation_function', type=str, choices=['relu', 'tanh', 'sigmoid'],
                         help='Activation function to use')
     parser.add_argument('--learning_rate', type=float, default=0.05,

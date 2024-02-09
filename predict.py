@@ -1,3 +1,4 @@
+import math
 from multilayer_perceptron import Network
 from utils import import_data
 
@@ -16,9 +17,11 @@ def predict(network, data):
 
 def show_predictions(predictions, expected_results):
     predicted_correctly = 0
+    log_loss = 0
     for i in range(len(predictions)):
         prediction = predictions[i][0]
         probability = round(predictions[i][1] * 100, 2)
+        log_loss += math.log(predictions[i][1])
 
         if prediction == expected_results[i]:
             predicted_correctly += 1
@@ -28,10 +31,13 @@ def show_predictions(predictions, expected_results):
             print('\033[31m' + "Predicted: ", prediction, "Probability: ", probability, "Expected result: ",
                   expected_results[i], '\033[31m')
 
-    print()
+    log_loss *= - (1 / len(predictions))
 
+    print()
     print('\033[37m' + "Predicted ", predicted_correctly, " out of ", len(predictions), " correctly",
           round((predicted_correctly / len(predictions)) * 100, 2), "%", '\033[37m')
+    print()
+    print('Binary cross entropy error: ' + str(round(log_loss, 5)))
 
 
 if __name__ == "__main__":

@@ -49,9 +49,8 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, required=True,
                         help='Path to the file containing the dataset, this should have been produced \
                         by split_dataset.py')
-    parser.add_argument('--hidden_layers', type=list, default=[2, 2],
-                        help='List of amount of nodes in the hidden layer(s). Length of list is amount of \
-                        hidden layers, each value is amount of nodes in the hidden layer')
+    parser.add_argument('--hidden_layers', type=int, default=[2, 2], nargs='+',
+                        help='Amount of nodes in the hidden layer(s)')
     parser.add_argument('--activation_function', type=str, choices=['relu', 'tanh', 'sigmoid'],
                         help='Activation function to use')
     parser.add_argument('--learning_rate', type=float, default=0.05,
@@ -65,6 +64,8 @@ if __name__ == '__main__':
     dataset = import_data(args.dataset)
     data = dataset['data']
     expected_results = dataset['expected_results']
+
+    print(args.hidden_layers)
 
     network = Network(len(data[0]), args.hidden_layers, args.activation_function)
     train_network(network, data, expected_results, args.learning_rate, args.amount_of_epochs)
