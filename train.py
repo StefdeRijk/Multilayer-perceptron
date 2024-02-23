@@ -34,7 +34,7 @@ def train_network(network, data, expected_results, l_rate, n_epoch):
             network.update_weights(row, l_rate)
         accuracy.append(round((predicted_correctly / len(data)) * 100, 2))
         total_error = total_error / n
-        print('epoch = %d, learning rate = %.3f, error = %.3f' % (epoch + 1, l_rate, round(total_error, 6)))
+        print('epoch = %d/%d, learning rate = %.3f, error = %.3f' % (epoch + 1, n_epoch, l_rate, round(total_error, 3)))
         epochs.append(epoch + 1)
         losses.append(total_error)
 
@@ -64,8 +64,6 @@ if __name__ == '__main__':
     dataset = import_data(args.dataset)
     data = dataset['data']
     expected_results = dataset['expected_results']
-
-    print(args.hidden_layers)
 
     network = Network(len(data[0]), args.hidden_layers, args.activation_function)
     train_network(network, data, expected_results, args.learning_rate, args.amount_of_epochs)

@@ -25,19 +25,16 @@ def show_predictions(predictions, expected_results):
 
         if prediction == expected_results[i]:
             predicted_correctly += 1
-            print('\033[37m' + "Predicted: ", prediction, "Probability: ", probability, "Expected result: ",
-                  expected_results[i], '\033[37m')
+            print('\033[37mPredicted: %s - Probability: %d - Expected result: %s' % (prediction, probability, expected_results[i]))
         else:
-            print('\033[31m' + "Predicted: ", prediction, "Probability: ", probability, "Expected result: ",
-                  expected_results[i], '\033[31m')
+            print('\033[31mPredicted: %s - Probability: %d - Expected result: %s' % (prediction, probability, expected_results[i]))
 
-    log_loss *= - (1 / len(predictions))
+    log_loss *= -(1 / len(predictions))
 
     print()
-    print('\033[37m' + "Predicted ", predicted_correctly, " out of ", len(predictions), " correctly",
-          round((predicted_correctly / len(predictions)) * 100, 2), "%", '\033[37m')
+    print('\033[37mPredicted %d out of %d correctly %0.1f%%' % (predicted_correctly, len(predictions), round((predicted_correctly / len(predictions)) * 100, 2)))
     print()
-    print('Binary cross entropy error: ' + str(round(log_loss, 5)))
+    print('Binary cross entropy error: %0.5f' % (round(log_loss, 5)))
 
 
 if __name__ == "__main__":
